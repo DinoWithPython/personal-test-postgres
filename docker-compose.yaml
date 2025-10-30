@@ -1,0 +1,38 @@
+services:
+  postgres:
+    container_name: postgres-test
+    image: postgres:13-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      PGDATA: /var/lib/postgresql/data/pgdata  # Чёткая директория данных
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    restart: unless-stopped 
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -U test_user -d test_db -h 127.0.0.1 -p 5432"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s  # Даём время на инициализацию
+    networks:
+      - db_network
+    # Ограничиваем ресурсы (профилактика OOM)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  postgres_data:
+
+networks:
+  db_network:
+    driver: bridge
